@@ -2,6 +2,9 @@
 
 The dataset used for training the number recognition is the [MNIST in csv](https://pjreddie.com/projects/mnist-in-csv/) dataset based on the [MNIST database of handwritten digits](http://yann.lecun.com/exdb/mnist/)
 
+Made using Python 3.8.5
+Numpy 1.19.3
+
 ## Sources
 
 - 3Blue1Brown. (2017). Neural networks. https://www.3blue1brown.com/neural-networks
