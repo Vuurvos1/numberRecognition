@@ -10,3 +10,4 @@ Numpy 1.19.3
 - 3Blue1Brown. (2017). Neural networks. https://www.3blue1brown.com/neural-networks
 - Lague, S. (2018). Neural Networks. YouTube. https://www.youtube.com/playlist?list=PLFt_AvWsXl0frsCrmv4fKfZ2OQIwoUuY
 - Sentdex. (2020). Neural Networks from Scratch in Python. YouTube. https://www.youtube.com/playlist?list=PLQVvvaa0QuDcjD5BAw2DxE6OF2tius3V3
+- Shiffman, D. (2018, May 1). 10: Neural Networks - The Nature of Code. YouTube. https://www.youtube.com/playlist?list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh
