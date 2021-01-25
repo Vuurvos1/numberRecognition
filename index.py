@@ -17,7 +17,7 @@ weights = [[0.2, 0.8, -0.5, 1.0],
 biases = [2.0, 3.0, 0.5]
 
 output = np.dot(weights, inputs) + biases
-print(output)
+# print(output)
 
 # Network structure
 # inputs hidden layers outputs
@@ -45,17 +45,42 @@ biases2 = [-1, 2, 0.5]
 # input[0] * weights[0] + input[1] * weights[1] + ... + bias
 layer1Outputs = np.dot(inputs, np.array(weights).transpose()) + biases
 layer2Outputs = np.dot(layer1Outputs, np.array(weights2).transpose()) + biases2
-print(layer2Outputs)
+# print(layer2Outputs)
 
 
-# Network structure
-# inputs hidden layers outputs
-# 5      [ 4 4 ]       3
+# np.random.seed(0)
 
-inputs = [1]
-hidden1 = []
-hidden2 = []
+inputs = [1, 2, 3, 2.5]
 
+class NeuralLayer:
+  def __init__(self, inputs, neurons):
+    # inputs x neursons
+    self.weights = 0.1 * np.random.randn(inputs, neurons)
+    self.biases = np.zeros((1, neurons))
+
+  def feedForward(self, inputs):
+    # input[0] * weights[0] + input[1] * weights[1] + ... + bias
+    self.output = np.dot(inputs, self.weights) + self.biases
+  def backPropagate(self):
+    pass
+
+class activationFunctionReLu:
+  def forward(self, inputs):
+    self.output = np.maximum(0, inputs)
+
+layer1 = NeuralLayer(4, 5)
+activation1 = activationFunctionReLu()
+
+layer2 = NeuralLayer(5, 2)
+activation2 = activationFunctionReLu()
+
+layer1.feedForward(inputs)
+activation1.forward(layer1.output)
+print(activation1.output)
+
+layer2.feedForward(activation1.output)
+activation2.forward(layer2.output)
+print(activation2.output)
 
 
 # Network structure
@@ -68,8 +93,8 @@ def feedForward():
 def backPropagate():
   return
 
-def activationFunction(x):
-  return max(0, x) # Relu formula y
+def activationFunction(inputs):
+  return np.maximum(0, inputs) # ReLu formula
 
 """
 with open('dataset/mnist_train_min.csv', newline='') as file:
