@@ -4,6 +4,7 @@ The dataset used for training the number recognition is the [MNIST in csv](https
 
 Made using Python 3.8.5
 Numpy 1.19.3
+tkinter 8.6
 
 ## Sources
 
