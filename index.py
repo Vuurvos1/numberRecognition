@@ -1,12 +1,17 @@
 import numpy as np  # v1.19.3
 from tkinter import *  # v8.6.0
 import math
+import random
 import csv
 
 print("Hello world")
 
 root = Tk()
-canvas = Canvas(root, bg="blue", height=250, width=300)
+canvas = Canvas(root, bg="white", height=600, width=800)
+
+
+def lerp(a, b, t):
+    return a + (b - a) * t
 
 
 def round_rectangle(x1, y1, x2, y2, r=25, **kwargs):
@@ -15,7 +20,30 @@ def round_rectangle(x1, y1, x2, y2, r=25, **kwargs):
     return canvas.create_polygon(points, **kwargs, smooth=True)
 
 
-my_rectangle = round_rectangle(50, 50, 150, 100, r=20, fill="red")
+def drawNode(x, y, fill=1):
+    outWidth = 38
+    padding = 4
+    # width without padding
+    innerWidth = outWidth - padding * 2
+
+    x2 = x + outWidth
+    y2 = y + outWidth
+
+    round_rectangle(x, y, x2, y2, 10, fill="white", outline="black", width=2)
+
+    x1 = x + padding
+    y1 = y + padding
+
+    # interpolate fill value
+    x2 = x1 + lerp(0, innerWidth, fill)
+    y2 = y + outWidth - padding
+
+    canvas.create_rectangle(x1, y1, x2, y2, fill="black")
+
+
+# drawNode(10, 10, 0.5)
+for i in range(10):
+    drawNode(10, i * (38 + 10) + 20, random.random())
 
 canvas.pack()
 root.mainloop()
