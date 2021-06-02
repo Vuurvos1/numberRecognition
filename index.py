@@ -4,10 +4,61 @@ import math
 import random
 import csv
 
-print("Hello world")
-
 root = Tk()
-canvas = Canvas(root, bg="white", height=600, width=800)
+root.title("Number recognition")  # window title
+root.maxsize(900, 670)  # specify the max size the window can expand to
+
+
+# Create left and right frames
+leftFrame = Frame(root, width=200, height=400, bg="blue")
+leftFrame.grid(row=0, column=0, padx=10, pady=5)
+rightFrame = Frame(root, width=650, height=400, bg="grey")
+rightFrame.grid(row=0, column=1, padx=10, pady=5)
+
+drawCanvas = Canvas(leftFrame, bg="white", height=200, width=200)
+
+neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
+
+
+b1 = "up"
+# xold, yold = None, None
+xold = None
+yold = None
+
+
+def b1down(event):
+    global b1, xold, yold  # acces global variables, why are you like this Python???
+
+    b1 = "down"
+
+    xold = event.x
+    yold = event.y
+
+
+def b1up(event):
+    global b1, xold, yold
+
+    b1 = "up"
+
+    xold = None
+    yold = None
+
+
+def motion(event):
+    global b1, xold, yold
+
+    if b1 == "down":
+        if xold is not None and yold is not None:
+            # draw it smooth. neat.
+            event.widget.create_line(xold, yold, event.x, event.y, smooth=TRUE)
+
+        xold = event.x
+        yold = event.y
+
+
+drawCanvas.bind("<Motion>", motion)
+drawCanvas.bind("<ButtonPress-1>", b1down)
+drawCanvas.bind("<ButtonRelease-1>", b1up)
 
 
 def lerp(a, b, t):
@@ -17,7 +68,7 @@ def lerp(a, b, t):
 def round_rectangle(x1, y1, x2, y2, r=25, **kwargs):
     points = (x1+r, y1, x1+r, y1, x2-r, y1, x2-r, y1, x2, y1, x2, y1+r, x2, y1+r, x2, y2-r, x2, y2-r, x2,
               y2, x2-r, y2, x2-r, y2, x1+r, y2, x1+r, y2, x1, y2, x1, y2-r, x1, y2-r, x1, y1+r, x1, y1+r, x1, y1)
-    return canvas.create_polygon(points, **kwargs, smooth=True)
+    return neuralNetworkCanvas.create_polygon(points, **kwargs, smooth=True)
 
 
 def drawNode(x, y, fill=1):
@@ -38,14 +89,15 @@ def drawNode(x, y, fill=1):
     x2 = x1 + lerp(0, innerWidth, fill)
     y2 = y + outWidth - padding
 
-    canvas.create_rectangle(x1, y1, x2, y2, fill="black")
+    neuralNetworkCanvas.create_rectangle(x1, y1, x2, y2, fill="black")
 
 
 # drawNode(10, 10, 0.5)
 for i in range(10):
     drawNode(10, i * (38 + 10) + 20, random.random())
 
-canvas.pack()
+neuralNetworkCanvas.pack()
+drawCanvas.pack()
 root.mainloop()
 
 # Network structure
