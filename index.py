@@ -4,6 +4,8 @@ import math
 import random
 import csv
 
+from PIL import Image, ImageDraw
+
 root = Tk()
 root.title("Number recognition")  # window title
 root.maxsize(900, 670)  # specify the max size the window can expand to
@@ -16,6 +18,8 @@ rightFrame = Frame(root, width=650, height=400, bg="grey")
 rightFrame.grid(row=0, column=1, padx=10, pady=5)
 
 drawCanvas = Canvas(leftFrame, bg="white", height=200, width=200)
+img1 = Image.new("L", (200, 200))
+draw = ImageDraw.Draw(img1)
 
 neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
 
@@ -50,7 +54,11 @@ def motion(event):
     if b1 == "down":
         if xold is not None and yold is not None:
             # draw it smooth. neat.
-            event.widget.create_line(xold, yold, event.x, event.y, smooth=TRUE)
+            event.widget.create_line(
+                xold, yold, event.x, event.y, width=5, fill='#000000', smooth=TRUE)
+
+            # do PIL equivalent
+            draw.line([xold, yold, event.x, event.y], 255)
 
         xold = event.x
         yold = event.y
@@ -90,6 +98,57 @@ def drawNode(x, y, fill=1):
     y2 = y + outWidth - padding
 
     neuralNetworkCanvas.create_rectangle(x1, y1, x2, y2, fill="black")
+
+
+def imgSave(event):
+    print(event.char)
+
+    # colors = []
+    # colStr = ''
+
+    if event.char == "s":
+        # for x in range(200):
+
+        #     column = []
+        #     for y in range(200):
+        #         # print()
+        #         col = drawCanvas.itemcget(
+        #             drawCanvas.find_overlapping(x, y, x, y), "fill")
+        #         if col == '':
+        #             column.append(255)
+        #             colStr += '1'
+        #         elif col == '#000000':
+        #             column.append(0)
+        #             colStr += '0'
+
+        #     colors.append(column)
+
+        #     colStr += '\n'
+
+        # print(drawCanvas.itemcget(
+        #     drawCanvas.find_overlapping(x, y, x, y), "fill"))
+        # ids = canvasfind_overlapping(x, y, x, y)
+
+        # drawCanvas.postscript(file="file_name.ps", colormode='color')
+
+        # print(colors)
+        # npCols = np.array(colors)
+        # data = Image.fromarray(npCols)
+        # print(data)
+
+        img1.show()
+
+    # data.show()
+    # data.save('dist/aaa.png')
+
+    # array = np.random.randint(255, size=(400, 400), dtype=np.uint8)
+    # image = Image.fromarray(array)
+    # image.save('dist/bbb.png')
+
+# print(colors)
+
+
+root.bind("<Key>", imgSave)
 
 
 # drawNode(10, 10, 0.5)
