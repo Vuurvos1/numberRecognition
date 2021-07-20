@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 root = Tk()
 root.title("Number recognition")  # window title
-root.maxsize(900, 670)  # specify the max size the window can expand to
+root.maxsize(900, 670)  # max size the window can expand to
 
 
 # Create left and right frames
@@ -17,8 +17,8 @@ leftFrame.grid(row=0, column=0, padx=10, pady=5)
 rightFrame = Frame(root, width=650, height=400, bg="grey")
 rightFrame.grid(row=0, column=1, padx=10, pady=5)
 
-drawCanvas = Canvas(leftFrame, bg="white", height=200, width=200)
-img1 = Image.new("L", (200, 200))
+drawCanvas = Canvas(leftFrame, bg="white", height=210, width=210)
+img1 = Image.new("L", (210, 210))
 draw = ImageDraw.Draw(img1)
 
 neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
@@ -58,12 +58,13 @@ def motion(event):
                 xold, yold, event.x, event.y, width=5, fill='#000000', smooth=TRUE)
 
             # do PIL equivalent
-            draw.line([xold, yold, event.x, event.y], 255)
+            draw.line([xold, yold, event.x, event.y], 255, 5)
 
         xold = event.x
         yold = event.y
 
 
+# trigger neural network on mouse up for preformance
 drawCanvas.bind("<Motion>", motion)
 drawCanvas.bind("<ButtonPress-1>", b1down)
 drawCanvas.bind("<ButtonRelease-1>", b1up)
@@ -103,49 +104,23 @@ def drawNode(x, y, fill=1):
 def imgSave(event):
     print(event.char)
 
-    # colors = []
-    # colStr = ''
-
     if event.char == "s":
-        # for x in range(200):
+        # img1.show()
 
-        #     column = []
-        #     for y in range(200):
-        #         # print()
-        #         col = drawCanvas.itemcget(
-        #             drawCanvas.find_overlapping(x, y, x, y), "fill")
-        #         if col == '':
-        #             column.append(255)
-        #             colStr += '1'
-        #         elif col == '#000000':
-        #             column.append(0)
-        #             colStr += '0'
+        # resize image from 210 x 210 px to 21 x 21 px
+        img1small = img1.resize((21, 21), Image.ANTIALIAS)
+        img1small.show()
 
-        #     colors.append(column)
+        # convert image to (1D) numpy array
+        pixels = Image.Image.getdata(img1small)
+        npImg = np.array(pixels)
 
-        #     colStr += '\n'
+        # array values might need to be inverted
+        print(npImg, npImg.size)
 
-        # print(drawCanvas.itemcget(
-        #     drawCanvas.find_overlapping(x, y, x, y), "fill"))
-        # ids = canvasfind_overlapping(x, y, x, y)
-
-        # drawCanvas.postscript(file="file_name.ps", colormode='color')
-
-        # print(colors)
-        # npCols = np.array(colors)
-        # data = Image.fromarray(npCols)
-        # print(data)
-
-        img1.show()
-
-    # data.show()
-    # data.save('dist/aaa.png')
-
-    # array = np.random.randint(255, size=(400, 400), dtype=np.uint8)
-    # image = Image.fromarray(array)
-    # image.save('dist/bbb.png')
-
-# print(colors)
+        # array = np.random.randint(255, size=(400, 400), dtype=np.uint8)
+        # image = Image.fromarray(array)
+        # image.save('dist/bbb.png')
 
 
 root.bind("<Key>", imgSave)

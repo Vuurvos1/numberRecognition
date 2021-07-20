@@ -2,10 +2,14 @@
 
 The dataset used for training the number recognition is the [MNIST in csv](https://pjreddie.com/projects/mnist-in-csv/) dataset based on the [MNIST database of handwritten digits](http://yann.lecun.com/exdb/mnist/)
 
-Made using Python 3.8.5
-Numpy 1.19.3
-tkinter 8.6
-Pillow 8.2.0
+![Interface of number recognition app](./docs/UI.png)
+
+**Made using:**
+
+- Python 3.8.5
+- Numpy 1.19.3
+- tkinter 8.6
+- Pillow 8.2.0
 
 ## Sources
 
