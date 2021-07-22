@@ -24,6 +24,47 @@ draw = ImageDraw.Draw(img1)
 neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
 
 
+def setup():
+    print("setup")
+    # drawNode(10, 10, 0.5)
+
+    # generate node positions in layer
+    layer1 = []
+    layer2 = []
+    layer3 = []
+
+    # draw lines
+
+    # layer 1 to 2 connections
+    for i in range(20):
+        x1 = 10 + 12  # add half node width
+        y1 = i * (24) + 40 + 12
+        for j in range(20):
+            x2 = 60 + 12  # add half node width
+            y2 = j * (24) + 40 + 12
+            drawLineAA(x1, y1, x2, y2, width=1, color="#000")
+
+    # layer 2 to 3 connections
+    for i in range(20):
+        x1 = 60 + 12  # add half node width
+        y1 = i * (24) + 40 + 12
+        for j in range(10):
+            x2 = 120 + 24
+            y2 = j * (48 + 10) + 48
+
+            drawLineAA(x1, y1, x2, y2, width=1, color="#AAA")
+
+    # draw nodes over lines
+    for i in range(20):
+        drawNode(10, i * 24 + 40, random.random(), 24)
+
+    for i in range(20):
+        drawNode(60, i * 24 + 40, random.random(), 24)
+
+    for i in range(10):
+        drawNode(120, i * (48 + 10) + 20, random.random(), 48)
+
+
 b1 = "up"
 # xold, yold = None, None
 xold = None
@@ -80,8 +121,8 @@ def round_rectangle(x1, y1, x2, y2, r=25, **kwargs):
     return neuralNetworkCanvas.create_polygon(points, **kwargs, smooth=True)
 
 
-def drawNode(x, y, fill=1):
-    outWidth = 38
+def drawNode(x, y, fill=1, size=38):
+    outWidth = size
     padding = 4
     # width without padding
     innerWidth = outWidth - padding * 2
@@ -99,6 +140,13 @@ def drawNode(x, y, fill=1):
     y2 = y + outWidth - padding
 
     neuralNetworkCanvas.create_rectangle(x1, y1, x2, y2, fill="black")
+
+
+def drawLineAA(x1, y1, x2, y2, width=2, color="#000"):
+    # Antialiasing draw .5px thicker line with approx 33% of color intensity before rendering line
+    neuralNetworkCanvas.create_line(
+        x1, y1, x2, y2, width=width + 0.5, fill="#AAA")
+    neuralNetworkCanvas.create_line(x1, y1, x2, y2, width=width, fill="#000")
 
 
 def imgSave(event):
@@ -125,10 +173,7 @@ def imgSave(event):
 
 root.bind("<Key>", imgSave)
 
-
-# drawNode(10, 10, 0.5)
-for i in range(10):
-    drawNode(10, i * (38 + 10) + 20, random.random())
+setup()
 
 neuralNetworkCanvas.pack()
 drawCanvas.pack()

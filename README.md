@@ -1,6 +1,6 @@
 # Number Recognition
 
-The dataset used for training the number recognition is the [MNIST in csv](https://pjreddie.com/projects/mnist-in-csv/) dataset based on the [MNIST database of handwritten digits](http://yann.lecun.com/exdb/mnist/)
+The data used for training the neural network is the [MNIST in csv](https://pjreddie.com/projects/mnist-in-csv/) dataset, which is based on the [MNIST database of handwritten digits](http://yann.lecun.com/exdb/mnist/)
 
 ![Interface of number recognition app](./docs/UI.png)
 
