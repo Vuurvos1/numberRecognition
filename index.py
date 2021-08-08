@@ -1,11 +1,12 @@
 import numpy as np  # v1.19.3
+import pandas as pd  # v1.3.1
 from tkinter import *  # v8.6.0
 import math
 import random
-import csv
-
+# import csv
 from PIL import Image, ImageDraw
 
+# tkinter stuff
 root = Tk()
 root.title("Number recognition")  # window title
 root.maxsize(900, 670)  # max size the window can expand to
@@ -23,9 +24,122 @@ draw = ImageDraw.Draw(img1)
 
 neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
 
+# neural network stuff
+data = pd.read_csv('dataset/mnist_train.csv', header=None)
+data.head()
+# print(data.head())
+
+data = np.array(data)
+m, n = data.shape
+
+# data_dev = data.
+
+data_train = data[0:1000].T
+# print(data_train)
+Y_train = data_train[0]
+X_train = data_train[1:n]
+
+# print(X_train[:, 0].shape)
+# print(Y_train)
+
+
+def init_params():
+    # input to layer 1
+    W1 = np.random.rand(10, 784) - 0.5
+    b1 = np.random.rand(10, 1) - 0.5
+
+    W2 = np.random.rand(10, 10) - 0.5
+    b2 = np.random.rand(10, 1) - 0.5
+
+    return W1, b1, W2, b2
+
+
+def ReLU(Z):
+    return np.maximum(0, Z)
+
+
+def derivReLU(Z):
+    return Z > 0
+
+
+def softmax(Z):
+    print(Z)
+    A = np.exp(Z) / sum(np.exp(Z))
+    return A
+
+
+def forwardProp(W1, b1, W2, b2, X):
+    Z1 = W1.dot(X) + b1
+    A1 = ReLU(Z1)
+
+    # layer 2 (output)
+    Z2 = W2.dot(A1) + b2
+    A2 = softmax(Z2)
+
+
+def oneHot(Y):
+    oneHotY = np.zeros((Y.size, Y.max() + 1))
+    oneHotY[np.arange(Y.size), Y] = 1
+    oneHotY = oneHotY.T
+    return oneHotY
+
+
+def backProp(Z1, A1, Z2, A2, W2, X, Y):
+    m = Y.size
+
+    oneHotY = oneHot(Y)
+    dZ2 = A2 - oneHotY
+    dW2 = 1 / m * dZ2.dot(A1.T)
+    db2 = 1 / m * np.sum(dZ2, 2)
+
+    dZ1 = W2.T.dot(dZ2) * derivReLU(Z1)
+    dW1 = 1 / m * dZ1.dot(X.T)
+    db1 = 1 / m * np.sum(dZ1, 2)
+
+    return dW1, db1, dW2, db2
+
+
+def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
+    W1 = W1 - alpha * dW1
+    b1 = b1 - alpha * db1
+    W2 = W2 - alpha * dW2
+    b2 = b2 - alpha * db2
+
+    return W1, b1, W2, b2
+
+
+def get_predictions(A2):
+    return np.argmax(A2, 0)
+
+
+def get_accuracy(predictions, Y):
+    print(predictions, Y)
+    return np.sum(predictions == Y) / Y.size
+
+
+def greadient_decent(X, Y, iterations, alpha):
+    W1, b1, W2, b2 = init_params()
+
+    for i in range(iterations):
+        Z1, A1, Z2, A2 = forwardProp(W1, b1, W2, b2, X)
+        dW1, db1, dW2, db2 = backProp(Z1, A1, Z2, A2, W2, X, Y)
+        W1, b1, W2, b2 = update_params(
+            W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
+
+        if i % 10 == 0:
+            print("Iteration ", i)
+            print("Accuracy ", get_accuracy(get_predictions(A2), Y))
+
+    return W1, b1, W2, b2
+
+
+W1, b1, W2, b2 = greadient_decent(X_train, Y_train, 500, 0.1)
+
+# other stuff
+
 
 def setup():
-    print("setup")
+    # print("setup")
     # drawNode(10, 10, 0.5)
 
     # generate node positions in layer
