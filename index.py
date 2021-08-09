@@ -22,6 +22,7 @@ draw = ImageDraw.Draw(img1)
 
 
 def clear_canvas():
+    draw.rectangle([(0, 0), (280, 280)], fill="#000000")
     drawCanvas.delete("all")
 
 
@@ -34,15 +35,12 @@ neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
 
 # neural network stuff
 data = pd.read_csv('dataset/mnist_train.csv', header=None)
-data.head()
 # print(data.head())
 
 data = np.array(data)
 m, n = data.shape
 
-# data_dev = data.
-
-data_train = data[0:1000].T
+data_train = data[0:2000].T
 # print(data_train)
 Y_train = data_train[0]
 X_train = data_train[1:n]
@@ -51,12 +49,28 @@ X_train = X_train / 255
 # print(X_train[:, 0].shape)
 # print(Y_train)
 
+# neural network stuff
+test_data = pd.read_csv('dataset/mnist_test.csv', header=None)
+# print(data.head())
+
+test_data = np.array(test_data)
+m_test, n_test = test_data.shape
+
+data_test = data[0:1000].T
+
+Y_test = data_test[0]
+X_test = data_test[1:n]
+X_test = X_test / 255
+
 
 def init_params():
+    # 784 [ 10 ] 10
+
     # input to layer 1
     W1 = np.random.rand(10, 784) - 0.5
     b1 = np.random.rand(10, 1) - 0.5
 
+    # hidden layer
     W2 = np.random.rand(10, 10) - 0.5
     b2 = np.random.rand(10, 1) - 0.5
 
@@ -127,7 +141,7 @@ def get_accuracy(predictions, Y):
     return np.sum(predictions == Y) / Y.size
 
 
-def greadient_decent(X, Y, alpha, iterations):
+def gradient_decent(X, Y, alpha, iterations):
     W1, b1, W2, b2 = init_params()
 
     for i in range(iterations):
@@ -136,15 +150,15 @@ def greadient_decent(X, Y, alpha, iterations):
         W1, b1, W2, b2 = update_params(
             W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
 
-        if i % 10 == 0:
-            # print("Iteration ", i)
+        if i % 50 == 0:
+            print("Iteration ", i)
             print("Accuracy ", get_accuracy(get_predictions(A2), Y))
 
     return W1, b1, W2, b2
 
 
 # train network
-W1, b1, W2, b2 = greadient_decent(X_train, Y_train, 0.1, 500)
+W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 500)
 
 
 def make_prediction(X, W1, b1, W2, b2):
@@ -154,27 +168,24 @@ def make_prediction(X, W1, b1, W2, b2):
 
 
 def test_prediction(index, W1, b1, W2, b2):
-    current_image = X_train[:, index, None]
-    prediction = make_prediction(X_train[:, index, None], W1, b1, W2, b2)
-    label = Y_train[index]
+    current_image = X_test[:, index, None]
+    prediction = make_prediction(X_test[:, index, None], W1, b1, W2, b2)
+    label = Y_test[index]
 
     print("Prediction ", prediction)
     print("Label ", label)
 
 
-# test_prediction(0, W1, b1, W2, b2)
-# test_prediction(1, W1, b1, W2, b2)
-# test_prediction(2, W1, b1, W2, b2)
-# test_prediction(3, W1, b1, W2, b2)
+test_prediction(0, W1, b1, W2, b2)
+test_prediction(1, W1, b1, W2, b2)
+test_prediction(2, W1, b1, W2, b2)
+test_prediction(3, W1, b1, W2, b2)
 test_prediction(4, W1, b1, W2, b2)
 
 
 # other stuff
 
 def setup():
-    # print("setup")
-    # drawNode(10, 10, 0.5)
-
     # draw lines
     # layer 1 to 2 connections
     for i in range(20):
@@ -242,7 +253,7 @@ def motion(event):
                 xold, yold, event.x, event.y, width=5, fill='#000000', smooth=TRUE)
 
             # do PIL equivalent
-            draw.line([xold, yold, event.x, event.y], 255, 5)
+            draw.line([xold, yold, event.x, event.y], 255, 6)
 
         xold = event.x
         yold = event.y
@@ -279,7 +290,7 @@ def drawNode(x, y, fill=1, size=38):
     y1 = y + padding
 
     # interpolate fill value
-    x2 = x1 + lerp(0, innerWidth, fill)
+    x2 = x1 + lerp(0, innerWidth, np.clip(fill, 0, 1))
     y2 = y + outWidth - padding
 
     neuralNetworkCanvas.create_rectangle(x1, y1, x2, y2, fill="black")
@@ -298,8 +309,8 @@ def process_canvas():
     # resize image to 28 x 28 px
     img1small = img1.resize((28, 28), Image.ANTIALIAS)
     # boost image contrast for better output
-    img1small = ImageEnhance.Contrast(img1small).enhance(2)
-    # img1small.show()
+    img1small = ImageEnhance.Contrast(img1small).enhance(5)
+    img1small.show()
 
     # convert image to (1D) numpy array
     pixels = Image.Image.getdata(img1small)
