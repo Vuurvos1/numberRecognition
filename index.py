@@ -2,9 +2,7 @@ import numpy as np  # v1.19.3
 import pandas as pd  # v1.3.1
 from tkinter import *  # v8.6.0
 import math
-import random
-# import csv
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
 # tkinter stuff
 root = Tk()
@@ -18,11 +16,21 @@ leftFrame.grid(row=0, column=0, padx=10, pady=5)
 rightFrame = Frame(root, width=650, height=400, bg="grey")
 rightFrame.grid(row=0, column=1, padx=10, pady=5)
 
-drawCanvas = Canvas(leftFrame, bg="white", height=210, width=210)
-img1 = Image.new("L", (210, 210))
+drawCanvas = Canvas(leftFrame, bg="white", height=280, width=280)
+img1 = Image.new("L", (280, 280))
 draw = ImageDraw.Draw(img1)
 
+
+def clear_canvas():
+    drawCanvas.delete("all")
+
+
+btn = Button(leftFrame, text="Clear",
+             activebackground="green", command=clear_canvas)
+
+
 neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
+
 
 # neural network stuff
 data = pd.read_csv('dataset/mnist_train.csv', header=None)
@@ -38,6 +46,7 @@ data_train = data[0:1000].T
 # print(data_train)
 Y_train = data_train[0]
 X_train = data_train[1:n]
+X_train = X_train / 255
 
 # print(X_train[:, 0].shape)
 # print(Y_train)
@@ -63,7 +72,6 @@ def derivReLU(Z):
 
 
 def softmax(Z):
-    print(Z)
     A = np.exp(Z) / sum(np.exp(Z))
     return A
 
@@ -76,6 +84,8 @@ def forwardProp(W1, b1, W2, b2, X):
     Z2 = W2.dot(A1) + b2
     A2 = softmax(Z2)
 
+    return Z1, A1, Z2, A2
+
 
 def oneHot(Y):
     oneHotY = np.zeros((Y.size, Y.max() + 1))
@@ -84,17 +94,17 @@ def oneHot(Y):
     return oneHotY
 
 
-def backProp(Z1, A1, Z2, A2, W2, X, Y):
+def backwardProp(Z1, A1, Z2, A2, W1, W2, X, Y):
     m = Y.size
 
     oneHotY = oneHot(Y)
     dZ2 = A2 - oneHotY
     dW2 = 1 / m * dZ2.dot(A1.T)
-    db2 = 1 / m * np.sum(dZ2, 2)
+    db2 = 1 / m * np.sum(dZ2)
 
     dZ1 = W2.T.dot(dZ2) * derivReLU(Z1)
     dW1 = 1 / m * dZ1.dot(X.T)
-    db1 = 1 / m * np.sum(dZ1, 2)
+    db1 = 1 / m * np.sum(dZ1)
 
     return dW1, db1, dW2, db2
 
@@ -113,42 +123,59 @@ def get_predictions(A2):
 
 
 def get_accuracy(predictions, Y):
-    print(predictions, Y)
+    # print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
 
-def greadient_decent(X, Y, iterations, alpha):
+def greadient_decent(X, Y, alpha, iterations):
     W1, b1, W2, b2 = init_params()
 
     for i in range(iterations):
         Z1, A1, Z2, A2 = forwardProp(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backProp(Z1, A1, Z2, A2, W2, X, Y)
+        dW1, db1, dW2, db2 = backwardProp(Z1, A1, Z2, A2, W1, W2, X, Y)
         W1, b1, W2, b2 = update_params(
             W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
 
         if i % 10 == 0:
-            print("Iteration ", i)
+            # print("Iteration ", i)
             print("Accuracy ", get_accuracy(get_predictions(A2), Y))
 
     return W1, b1, W2, b2
 
 
-W1, b1, W2, b2 = greadient_decent(X_train, Y_train, 500, 0.1)
+# train network
+W1, b1, W2, b2 = greadient_decent(X_train, Y_train, 0.1, 500)
+
+
+def make_prediction(X, W1, b1, W2, b2):
+    _, _, _, A2 = forwardProp(W1, b1, W2, b2, X)
+    predictions = get_predictions(A2)
+    return predictions
+
+
+def test_prediction(index, W1, b1, W2, b2):
+    current_image = X_train[:, index, None]
+    prediction = make_prediction(X_train[:, index, None], W1, b1, W2, b2)
+    label = Y_train[index]
+
+    print("Prediction ", prediction)
+    print("Label ", label)
+
+
+# test_prediction(0, W1, b1, W2, b2)
+# test_prediction(1, W1, b1, W2, b2)
+# test_prediction(2, W1, b1, W2, b2)
+# test_prediction(3, W1, b1, W2, b2)
+test_prediction(4, W1, b1, W2, b2)
+
 
 # other stuff
-
 
 def setup():
     # print("setup")
     # drawNode(10, 10, 0.5)
 
-    # generate node positions in layer
-    layer1 = []
-    layer2 = []
-    layer3 = []
-
     # draw lines
-
     # layer 1 to 2 connections
     for i in range(20):
         x1 = 10 + 12  # add half node width
@@ -170,43 +197,45 @@ def setup():
 
     # draw nodes over lines
     for i in range(20):
-        drawNode(10, i * 24 + 40, random.random(), 24)
+        drawNode(10, i * 24 + 40, np.random.rand(), 24)
 
     for i in range(20):
-        drawNode(60, i * 24 + 40, random.random(), 24)
+        drawNode(60, i * 24 + 40, np.random.rand(), 24)
 
     for i in range(10):
-        drawNode(120, i * (48 + 10) + 20, random.random(), 48)
+        drawNode(120, i * (48 + 10) + 20, 0, 48)
 
 
-b1 = "up"
+button1 = "up"
 # xold, yold = None, None
 xold = None
 yold = None
 
 
-def b1down(event):
-    global b1, xold, yold  # acces global variables, why are you like this Python???
+def mouse1down(event):
+    global button1, xold, yold  # acces global variables, why are you like this Python???
 
-    b1 = "down"
+    button1 = "down"
 
     xold = event.x
     yold = event.y
 
 
-def b1up(event):
-    global b1, xold, yold
+def mouse1up(event):
+    global button1, xold, yold
 
-    b1 = "up"
+    button1 = "up"
 
     xold = None
     yold = None
 
+    process_canvas()
+
 
 def motion(event):
-    global b1, xold, yold
+    global button1, xold, yold
 
-    if b1 == "down":
+    if button1 == "down":
         if xold is not None and yold is not None:
             # draw it smooth. neat.
             event.widget.create_line(
@@ -221,8 +250,8 @@ def motion(event):
 
 # trigger neural network on mouse up for preformance
 drawCanvas.bind("<Motion>", motion)
-drawCanvas.bind("<ButtonPress-1>", b1down)
-drawCanvas.bind("<ButtonRelease-1>", b1up)
+drawCanvas.bind("<ButtonPress-1>", mouse1down)
+drawCanvas.bind("<ButtonRelease-1>", mouse1up)
 
 
 def lerp(a, b, t):
@@ -263,36 +292,52 @@ def drawLineAA(x1, y1, x2, y2, width=2, color="#000"):
     neuralNetworkCanvas.create_line(x1, y1, x2, y2, width=width, fill="#000")
 
 
-def imgSave(event):
+def process_canvas():
+    # img1.show()
+
+    # resize image to 28 x 28 px
+    img1small = img1.resize((28, 28), Image.ANTIALIAS)
+    # boost image contrast for better output
+    img1small = ImageEnhance.Contrast(img1small).enhance(2)
+    # img1small.show()
+
+    # convert image to (1D) numpy array
+    pixels = Image.Image.getdata(img1small)
+    npImg = np.array(pixels)
+
+    npImg = np.reshape(npImg, (-1, 1))
+    npImg = npImg / 255
+
+    print(make_prediction(npImg, W1, b1, W2, b2))
+
+    _, _, _, A2 = forwardProp(W1, b1, W2, b2, npImg)
+    # print(A2)
+
+    # draw output nodes
+    A2 = A2.flatten()
+    for i in range(A2.size):
+        drawNode(120, i * (48 + 10) + 20, A2[i], 48)
+
+
+def keyPress(event):
     print(event.char)
 
-    if event.char == "s":
-        # img1.show()
-
-        # resize image from 210 x 210 px to 21 x 21 px
-        img1small = img1.resize((21, 21), Image.ANTIALIAS)
-        img1small.show()
-
-        # convert image to (1D) numpy array
-        pixels = Image.Image.getdata(img1small)
-        npImg = np.array(pixels)
-
-        # array values might need to be inverted
-        print(npImg, npImg.size)
-
-        # array = np.random.randint(255, size=(400, 400), dtype=np.uint8)
-        # image = Image.fromarray(array)
-        # image.save('dist/bbb.png')
+    # if event.char == "s":
+    # process_canvas()
 
 
-root.bind("<Key>", imgSave)
+root.bind("<Key>", keyPress)
 
 setup()
 
 neuralNetworkCanvas.pack()
+
 drawCanvas.pack()
+btn.pack()
+
 root.mainloop()
 
+"""
 # Network structure
 # inputs outputs
 # 4      3
@@ -378,44 +423,7 @@ print(activation2.output)
 # inputs hidden layers outputs
 # 784    [ 20 20 ]     10
 
-def feedForward():
-    return
 
-
-def backPropagate():
-    return
-
-
-def activationFunction(inputs):
-    return np.maximum(0, inputs)  # ReLu formula
-
-
-"""
-with open('dataset/mnist_train_min.csv', newline='') as file:
-  dataList = list(csv.reader(file))
-
-  # print(dataList[0])
-
-  # item 0 is value
-  # rest is a 28x28 grid of pixel values
-  # print(len(dataList[0]))
-  image = []
-  line = []
-  # move data into 3d array for visualizing
-  for i in range(len(dataList[0])):
-    if i % 28 == 0:
-      line.append(dataList[0][i])
-      # print(line)
-      image.append(line)
-      line = []
-    else:
-      line.append(dataList[0][i])
-
-  print(dataList[0][0])
-
-  # 2d array using numpy
-  dataList[0].pop(0)
-
-  image = np.array(dataList[0]).reshape((28,28))
-  print(image)
+# def activationFunction(inputs):
+#     return np.maximum(0, inputs)  # ReLu formula
 """
