@@ -16,8 +16,8 @@ leftFrame.grid(row=0, column=0, padx=10, pady=5)
 rightFrame = Frame(root, width=650, height=400, bg="grey")
 rightFrame.grid(row=0, column=1, padx=10, pady=5)
 
-drawCanvas = Canvas(leftFrame, bg="white", height=280, width=280)
-img1 = Image.new("L", (280, 280))
+drawCanvas = Canvas(leftFrame, bg="white", height=200, width=200)
+img1 = Image.new("L", (232, 232))
 draw = ImageDraw.Draw(img1)
 
 
@@ -40,14 +40,12 @@ data = pd.read_csv('dataset/mnist_train.csv', header=None)
 data = np.array(data)
 m, n = data.shape
 
-data_train = data[0:2000].T
+data_train = data[0:6000].T
 # print(data_train)
 Y_train = data_train[0]
 X_train = data_train[1:n]
 X_train = X_train / 255
 
-# print(X_train[:, 0].shape)
-# print(Y_train)
 
 # neural network stuff
 test_data = pd.read_csv('dataset/mnist_test.csv', header=None)
@@ -137,7 +135,6 @@ def get_predictions(A2):
 
 
 def get_accuracy(predictions, Y):
-    # print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
 
@@ -150,7 +147,7 @@ def gradient_decent(X, Y, alpha, iterations):
         W1, b1, W2, b2 = update_params(
             W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
 
-        if i % 50 == 0:
+        if i % 100 == 0:
             print("Iteration ", i)
             print("Accuracy ", get_accuracy(get_predictions(A2), Y))
 
@@ -158,7 +155,7 @@ def gradient_decent(X, Y, alpha, iterations):
 
 
 # train network
-W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 500)
+W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 400)
 
 
 def make_prediction(X, W1, b1, W2, b2):
@@ -218,9 +215,7 @@ def setup():
 
 
 button1 = "up"
-# xold, yold = None, None
-xold = None
-yold = None
+drawCanvas.old_coords = None
 
 
 def mouse1down(event):
@@ -233,12 +228,10 @@ def mouse1down(event):
 
 
 def mouse1up(event):
-    global button1, xold, yold
+    global button1
 
     button1 = "up"
-
-    xold = None
-    yold = None
+    drawCanvas.old_coords = None
 
     process_canvas()
 
@@ -247,16 +240,16 @@ def motion(event):
     global button1, xold, yold
 
     if button1 == "down":
-        if xold is not None and yold is not None:
-            # draw it smooth. neat.
-            event.widget.create_line(
-                xold, yold, event.x, event.y, width=5, fill='#000000', smooth=TRUE)
+        x, y = event.x, event.y
+        if drawCanvas.old_coords:
+            x1, y1 = drawCanvas.old_coords
 
-            # do PIL equivalent
-            draw.line([xold, yold, event.x, event.y], 255, 6)
+            # draw line on canvas
+            drawCanvas.create_line(x, y, x1, y1, width=5)
+            # draw line for neural network, add offset to create room around number
+            draw.line([x+16, y+16, x1+16, y1+16], 255, 16)
 
-        xold = event.x
-        yold = event.y
+        drawCanvas.old_coords = x, y
 
 
 # trigger neural network on mouse up for preformance
@@ -306,13 +299,13 @@ def drawLineAA(x1, y1, x2, y2, width=2, color="#000"):
 def process_canvas():
     # img1.show()
 
-    # resize image to 28 x 28 px
+    # resize image to 28 x 28 px, maybe remove anti aliasing
     img1small = img1.resize((28, 28), Image.ANTIALIAS)
     # boost image contrast for better output
-    img1small = ImageEnhance.Contrast(img1small).enhance(5)
-    img1small.show()
+    # img1small = ImageEnhance.Contrast(img1small).enhance(1.2)
+    # img1small.show()
 
-    # convert image to (1D) numpy array
+    # convert image to (1d) numpy array
     pixels = Image.Image.getdata(img1small)
     npImg = np.array(pixels)
 
@@ -322,7 +315,6 @@ def process_canvas():
     print(make_prediction(npImg, W1, b1, W2, b2))
 
     _, _, _, A2 = forwardProp(W1, b1, W2, b2, npImg)
-    # print(A2)
 
     # draw output nodes
     A2 = A2.flatten()
@@ -350,91 +342,6 @@ root.mainloop()
 
 """
 # Network structure
-# inputs outputs
-# 4      3
-inputs = [1.0, 2.0, 3.0, 2.5]
-weights = [[0.2, 0.8, -0.5, 1.0],
-           [0.5, -0.91, 0.26, -0.5],
-           [-0.26, -0.27, 0.17, 0.87]]
-
-biases = [2.0, 3.0, 0.5]
-
-output = np.dot(weights, inputs) + biases
-# print(output)
-
-# Network structure
 # inputs hidden layers outputs
-# 4      [ 3 3 ]       1
-
-
-inputs = [[1, 2, 3, 2.5],
-          [2.0, 5.0, -1.0, 2.0],
-          [-1.5, 2.7, 3.3, 0.8]]
-
-weights = [[0.2, 0.8, -0.5, 1.0],
-           [0.5, -0.91, 0.26, -0.5],
-           [-0.26, -0.27, 0.17, 0.87]]
-
-biases = [2, 3, 0.5]
-
-weights2 = [[0.1, -0.14, 0.5],
-            [-0.5, 0.12, -0.33],
-            [-0.44, 0.73, -0.13]]
-
-biases2 = [-1, 2, 0.5]
-
-# output = input[0] * weights[0] + input[1] * weights[1]
-
-# input[0] * weights[0] + input[1] * weights[1] + ... + bias
-layer1Outputs = np.dot(inputs, np.array(weights).transpose()) + biases
-layer2Outputs = np.dot(layer1Outputs, np.array(weights2).transpose()) + biases2
-# print(layer2Outputs)
-
-
-# np.random.seed(0)
-
-inputs = [1, 2, 3, 2.5]
-
-
-class NeuralLayer:
-    def __init__(self, inputs, neurons):
-        # inputs x neursons
-        self.weights = 0.1 * np.random.randn(inputs, neurons)
-        self.biases = np.zeros((1, neurons))
-
-    def feedForward(self, inputs):
-        # input[0] * weights[0] + input[1] * weights[1] + ... + bias
-        self.output = np.dot(inputs, self.weights) + self.biases
-
-    def backPropagate(self):
-        pass
-
-
-class activationFunctionReLu:
-    def forward(self, inputs):
-        self.output = np.maximum(0, inputs)
-
-
-layer1 = NeuralLayer(4, 5)
-activation1 = activationFunctionReLu()
-
-layer2 = NeuralLayer(5, 2)
-activation2 = activationFunctionReLu()
-
-layer1.feedForward(inputs)
-activation1.forward(layer1.output)
-print(activation1.output)
-
-layer2.feedForward(activation1.output)
-activation2.forward(layer2.output)
-print(activation2.output)
-
-
-# Network structure
-# inputs hidden layers outputs
-# 784    [ 20 20 ]     10
-
-
-# def activationFunction(inputs):
-#     return np.maximum(0, inputs)  # ReLu formula
+# 784    [ 10 ]     10
 """
