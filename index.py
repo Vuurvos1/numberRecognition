@@ -7,16 +7,22 @@ from PIL import Image, ImageDraw, ImageEnhance
 # tkinter stuff
 root = Tk()
 root.title("Number recognition")  # window title
-root.maxsize(900, 670)  # max size the window can expand to
+root.maxsize(850, 600)  # max size the window can expand to
+root.geometry("850x600")  # set fixed window size
 
+col_width = 850/2
 
 # Create left and right frames
-leftFrame = Frame(root, width=200, height=400, bg="blue")
-leftFrame.grid(row=0, column=0, padx=10, pady=5)
-rightFrame = Frame(root, width=650, height=400, bg="grey")
-rightFrame.grid(row=0, column=1, padx=10, pady=5)
+leftFrame = Frame(root, width=425)
+# leftFrame.grid(row=0, column=0, sticky='we', rowspan=2)
+leftFrame.pack(side=LEFT, expand=True)
+rightFrame = Frame(root, bg="blue")
+rightFrame.pack(side=RIGHT)
+# rightFrame.grid(row=0, column=1)
 
-drawCanvas = Canvas(leftFrame, bg="white", height=200, width=200)
+drawCanvas = Canvas(leftFrame, bg="white", height=200,
+                    width=200, cursor="pencil")
+drawCanvas.pack(pady=(0, 16))
 img1 = Image.new("L", (232, 232))
 draw = ImageDraw.Draw(img1)
 
@@ -26,11 +32,12 @@ def clear_canvas():
     drawCanvas.delete("all")
 
 
-btn = Button(leftFrame, text="Clear",
-             activebackground="green", command=clear_canvas)
+btn = Button(leftFrame, text="clear",
+             activebackground="#E5E5E5", borderwidth=1, relief="solid",
+             cursor="hand1", padx=12, pady=4, command=clear_canvas)
+btn.pack(side=RIGHT, padx=(0, 2))
 
-
-neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=650, width=400)
+neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=600, width=425)
 
 
 # neural network stuff
@@ -155,7 +162,7 @@ def gradient_decent(X, Y, alpha, iterations):
 
 
 # train network
-W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 400)
+W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 1)
 
 
 def make_prediction(X, W1, b1, W2, b2):
@@ -185,33 +192,33 @@ test_prediction(4, W1, b1, W2, b2)
 def setup():
     # draw lines
     # layer 1 to 2 connections
-    for i in range(20):
-        x1 = 10 + 12  # add half node width
-        y1 = i * (24) + 40 + 12
-        for j in range(20):
-            x2 = 60 + 12  # add half node width
-            y2 = j * (24) + 40 + 12
-            drawLineAA(x1, y1, x2, y2, width=1, color="#000")
+    # for i in range(20):
+    #     x1 = 10 + 12  # add half node width
+    #     y1 = i * (24) + 40 + 12
+    #     for j in range(20):
+    #         x2 = 60 + 12  # add half node width
+    #         y2 = j * (24) + 40 + 12
+    #         drawLineAA(x1, y1, x2, y2, width=1, color="#000")
 
     # layer 2 to 3 connections
-    for i in range(20):
-        x1 = 60 + 12  # add half node width
-        y1 = i * (24) + 40 + 12
-        for j in range(10):
-            x2 = 120 + 24
-            y2 = j * (48 + 10) + 48
+    # for i in range(20):
+    #     x1 = 60 + 12  # add half node width
+    #     y1 = i * (24) + 40 + 12
+    #     for j in range(10):
+    #         x2 = 120 + 24
+    #         y2 = j * (48 + 10) + 48
 
-            drawLineAA(x1, y1, x2, y2, width=1, color="#AAA")
+    #         drawLineAA(x1, y1, x2, y2, width=1, color="#AAA")
 
     # draw nodes over lines
-    for i in range(20):
-        drawNode(10, i * 24 + 40, np.random.rand(), 24)
-
-    for i in range(20):
-        drawNode(60, i * 24 + 40, np.random.rand(), 24)
+    for i in range(12):
+        drawNode(38, i * (24 + 5) + 260 / 2, np.random.rand(), 24)
 
     for i in range(10):
-        drawNode(120, i * (48 + 10) + 20, 0, 48)
+        drawNode(col_width / 2 - 23, i * (46 + 10) + 20, 0, 46)
+
+        neuralNetworkCanvas.create_text(
+            col_width / 2 + 60, i * (46 + 10) + 46, font="Arial 20", text=str(i))
 
 
 button1 = "up"
