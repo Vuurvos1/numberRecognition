@@ -12,6 +12,9 @@ The data used for training the neural network is the [MNIST in csv](https://pjre
 - Pillow 8.2.0
 - Pandas 1.3.1
 
+**Note**
+While drawing a digit, drawing it almost as big as the canvas can increase the accuracy of the neural network
+
 ## Sources
 
 <!-- py -m pip -->

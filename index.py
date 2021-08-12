@@ -40,46 +40,23 @@ btn.pack(side=RIGHT, padx=(0, 2))
 neuralNetworkCanvas = Canvas(rightFrame, height=600, width=425)
 
 
-# neural network stuff
-data = pd.read_csv('dataset/mnist_train.csv', header=None)
-# print(data.head())
+# get training and test data
+def format_data(path, size):
+    data = pd.read_csv(path, header=None)
+    # print(data.head())
 
-data = np.array(data)
-m, n = data.shape
+    data = np.array(data)
+    m, n = data.shape
+    data = data[0:size].T
 
-data_train = data[0:6000].T
-# print(data_train)
-Y_train = data_train[0]
-X_train = data_train[1:n]
-X_train = X_train / 255
+    x_data = data[1:n] / 255
+    y_data = data[0]
 
-
-# neural network stuff
-test_data = pd.read_csv('dataset/mnist_test.csv', header=None)
-# print(data.head())
-
-test_data = np.array(test_data)
-m_test, n_test = test_data.shape
-
-data_test = data[0:1000].T
-
-Y_test = data_test[0]
-X_test = data_test[1:n]
-X_test = X_test / 255
+    return x_data, y_data
 
 
-def init_params():
-    # 784 [ 12 ] 10
-
-    # input to layer 1
-    W1 = np.random.rand(12, 784) - 0.5
-    b1 = np.random.rand(12, 1) - 0.5
-
-    # hidden layer
-    W2 = np.random.rand(10, 12) - 0.5
-    b2 = np.random.rand(10, 1) - 0.5
-
-    return W1, b1, W2, b2
+X_train, Y_train = format_data('dataset/mnist_train.csv', 25000)
+X_test, Y_test = format_data('dataset/mnist_test.csv', 1000)
 
 
 class ReLU:
@@ -95,46 +72,10 @@ def softmax(Z):
     return A
 
 
-def forwardProp(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1
-    A1 = ReLU().forward(Z1)
-
-    # layer 2 (output)
-    Z2 = W2.dot(A1) + b2
-    A2 = softmax(Z2)
-
-    return Z1, A1, Z2, A2
-
-
-def oneHot(Y):
-    oneHotY = np.zeros((Y.size, Y.max() + 1))
-    oneHotY[np.arange(Y.size), Y] = 1
-    oneHotY = oneHotY.T
-    return oneHotY
-
-
-def backwardProp(Z1, A1, Z2, A2, W1, W2, X, Y):
-    m = Y.size
-
-    oneHotY = oneHot(Y)
-    dZ2 = A2 - oneHotY
-    dW2 = 1 / m * dZ2.dot(A1.T)
-    db2 = 1 / m * np.sum(dZ2)
-
-    dZ1 = W2.T.dot(dZ2) * ReLU().backward(Z1)
-    dW1 = 1 / m * dZ1.dot(X.T)
-    db1 = 1 / m * np.sum(dZ1)
-
-    return dW1, db1, dW2, db2
-
-
-def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
-    W1 = W1 - alpha * dW1
-    b1 = b1 - alpha * db1
-    W2 = W2 - alpha * dW2
-    b2 = b2 - alpha * db2
-
-    return W1, b1, W2, b2
+def make_prediction(x_input):
+    _, _, _, A2 = net.forward(x_input)
+    predictions = get_predictions(A2)
+    return predictions
 
 
 def get_predictions(A2):
@@ -145,8 +86,96 @@ def get_accuracy(predictions, Y):
     return np.sum(predictions == Y) / Y.size
 
 
-def gradient_decent(X, Y, alpha, iterations):
-    if os.path.exists('./output/data.json'):
+def oneHot(Y):
+    oneHotY = np.zeros((Y.size, Y.max() + 1))
+    oneHotY[np.arange(Y.size), Y] = 1
+    oneHotY = oneHotY.T
+    return oneHotY
+
+
+class Neural_Network:
+    def __init__(self):
+        """
+        # Network structure
+        # inputs hidden layers outputs
+        # 784    [ 12 ]        10
+        """
+
+        if os.path.exists('./output/data.json'):
+            self.W1, self.b1, self.W2, self.b2 = W1, b1, W2, b2
+            return
+
+        # input to layer 1
+        self.W1 = np.random.rand(12, 784) - 0.5
+        self.b1 = np.random.rand(12, 1) - 0.5
+
+        # hidden layer
+        self.W2 = np.random.rand(10, 12) - 0.5
+        self.b2 = np.random.rand(10, 1) - 0.5
+
+    def forward(self, x_input):
+        self.Z1 = self.W1.dot(x_input) + self.b1
+        self.A1 = ReLU().forward(self.Z1)
+
+        # layer 2 (output)
+        self.Z2 = self.W2.dot(self.A1) + self.b2
+        self.A2 = softmax(self.Z2)
+
+        return self.Z1, self.A1, self.Z2, self.A2
+
+    def backward(self, x_input, y_input, alpha):
+        m = y_input.size
+
+        oneHotY = oneHot(y_input)
+        dZ2 = self.A2 - oneHotY
+        dW2 = 1 / m * dZ2.dot(self.A1.T)
+        db2 = 1 / m * np.sum(dZ2)
+
+        dZ1 = self.W2.T.dot(dZ2) * ReLU().backward(self.Z1)
+        dW1 = 1 / m * dZ1.dot(x_input.T)
+        db1 = 1 / m * np.sum(dZ1)
+
+        # update parameters
+        self.W1 = self.W1 - alpha * dW1
+        self.b1 = self.b1 - alpha * db1
+        self.W2 = self.W2 - alpha * dW2
+        self.b2 = self.b2 - alpha * db2
+
+        return dW1, db1, dW2, db2
+
+    def train(self, x_train, y_train, epochs, alpha):
+        # reshuffle weights and biases
+        self.W1 = np.random.rand(12, 784) - 0.5
+        self.b1 = np.random.rand(12, 1) - 0.5
+
+        self.W2 = np.random.rand(10, 12) - 0.5
+        self.b2 = np.random.rand(10, 1) - 0.5
+
+        for i in range(epochs):
+            for j in range(len(x_train)):
+                Z1, A1, Z2, A2 = self.forward(x_train)
+                dW1, db1, dW2, db2 = self.backward(x_train, y_train, alpha)
+
+            if i % 1 == 0:
+                print("Epoch ", i, "   Accuracy",
+                      get_accuracy(get_predictions(self.A2), y_train))
+
+        self.save_weights()
+        return self.W1, self.b1, self.W2, self.b2
+
+    def predict(self, input):
+        _, _, _, A2 = self.forward(input)
+        predictions = get_predictions(A2)
+        return predictions
+
+    def test(self, index):
+        current_image = X_test[:, index, None]
+        prediction = make_prediction(current_image)
+        label = Y_test[index]
+
+        print("Prediction ", prediction, "   Label ", label)
+
+    def get_weights(self):
         # get weights and biases from file
         with open('output/data.json') as file_object:
             data = json.load(file_object)
@@ -160,54 +189,23 @@ def gradient_decent(X, Y, alpha, iterations):
 
         return W1, b1, W2, b2
 
-    # train neural network
-    W1, b1, W2, b2 = init_params()
+    def save_weights(self):
+        # save weights and biases to json file
+        data = {"W1": self.W1.tolist(), "b1": self.b1.tolist(),
+                "W2": self.W2.tolist(), "b2": self.b2.tolist()}
+        jsonString = json.dumps(data)
+        jsonFile = open("output/data.json", "w")
+        jsonFile.write(jsonString)
+        jsonFile.close()
 
-    for i in range(iterations):
-        Z1, A1, Z2, A2 = forwardProp(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backwardProp(Z1, A1, Z2, A2, W1, W2, X, Y)
-        W1, b1, W2, b2 = update_params(
-            W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-
-        if i % 100 == 0:
-            print("Iteration ", i)
-            print("Accuracy ", get_accuracy(get_predictions(A2), Y))
-
-    # save weights and biases to json file
-    aDict = {"W1": W1.tolist(), "b1": b1.tolist(),
-             "W2": W2.tolist(), "b2": b2.tolist()}
-    jsonString = json.dumps(aDict)
-    jsonFile = open("output/data.json", "w")
-    jsonFile.write(jsonString)
-    jsonFile.close()
-
-    return W1, b1, W2, b2
+        print("Saved weights and biases")
 
 
-# train network
-W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 5000)
-
-
-def make_prediction(X, W1, b1, W2, b2):
-    _, _, _, A2 = forwardProp(W1, b1, W2, b2, X)
-    predictions = get_predictions(A2)
-    return predictions
-
-
-def test_prediction(index, W1, b1, W2, b2):
-    current_image = X_test[:, index, None]
-    prediction = make_prediction(X_test[:, index, None], W1, b1, W2, b2)
-    label = Y_test[index]
-
-    print("Prediction ", prediction)
-    print("Label ", label)
-
-
-test_prediction(0, W1, b1, W2, b2)
-test_prediction(1, W1, b1, W2, b2)
-test_prediction(2, W1, b1, W2, b2)
-test_prediction(3, W1, b1, W2, b2)
-test_prediction(4, W1, b1, W2, b2)
+# setup neural network
+net = Neural_Network()
+net.train(X_train, Y_train, 10, 0.1)
+for i in range(5):
+    net.test(i)
 
 
 # other stuff
@@ -344,7 +342,7 @@ def process_canvas():
 
     # print(make_prediction(npImg, W1, b1, W2, b2))
 
-    _, A1, _, A2 = forwardProp(W1, b1, W2, b2, npImg)
+    _, A1, _, A2 = net.forward(npImg)
 
     # draw hidden layer nodes
     A1 = A1.flatten()
@@ -374,9 +372,3 @@ drawCanvas.pack()
 btn.pack()
 
 root.mainloop()
-
-"""
-# Network structure
-# inputs hidden layers outputs
-# 784    [ 10 ]     10
-"""
