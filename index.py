@@ -2,6 +2,8 @@ import numpy as np  # v1.19.3
 import pandas as pd  # v1.3.1
 from tkinter import *  # v8.6.0
 import math
+import json
+import os
 from PIL import Image, ImageDraw, ImageEnhance
 
 # tkinter stuff
@@ -14,11 +16,9 @@ col_width = 850/2
 
 # Create left and right frames
 leftFrame = Frame(root, width=425)
-# leftFrame.grid(row=0, column=0, sticky='we', rowspan=2)
 leftFrame.pack(side=LEFT, expand=True)
 rightFrame = Frame(root, bg="blue")
-rightFrame.pack(side=RIGHT)
-# rightFrame.grid(row=0, column=1)
+rightFrame.pack(side=RIGHT, expand=True)
 
 drawCanvas = Canvas(leftFrame, bg="white", height=200,
                     width=200, cursor="pencil")
@@ -37,7 +37,7 @@ btn = Button(leftFrame, text="clear",
              cursor="hand1", padx=12, pady=4, command=clear_canvas)
 btn.pack(side=RIGHT, padx=(0, 2))
 
-neuralNetworkCanvas = Canvas(rightFrame, bg="white", height=600, width=425)
+neuralNetworkCanvas = Canvas(rightFrame, height=600, width=425)
 
 
 # neural network stuff
@@ -69,25 +69,25 @@ X_test = X_test / 255
 
 
 def init_params():
-    # 784 [ 10 ] 10
+    # 784 [ 12 ] 10
 
     # input to layer 1
-    W1 = np.random.rand(10, 784) - 0.5
-    b1 = np.random.rand(10, 1) - 0.5
+    W1 = np.random.rand(12, 784) - 0.5
+    b1 = np.random.rand(12, 1) - 0.5
 
     # hidden layer
-    W2 = np.random.rand(10, 10) - 0.5
+    W2 = np.random.rand(10, 12) - 0.5
     b2 = np.random.rand(10, 1) - 0.5
 
     return W1, b1, W2, b2
 
 
-def ReLU(Z):
-    return np.maximum(0, Z)
+class ReLU:
+    def forward(self, input):
+        return np.maximum(0, input)
 
-
-def derivReLU(Z):
-    return Z > 0
+    def backward(self, Z):
+        return Z > 0
 
 
 def softmax(Z):
@@ -97,7 +97,7 @@ def softmax(Z):
 
 def forwardProp(W1, b1, W2, b2, X):
     Z1 = W1.dot(X) + b1
-    A1 = ReLU(Z1)
+    A1 = ReLU().forward(Z1)
 
     # layer 2 (output)
     Z2 = W2.dot(A1) + b2
@@ -121,7 +121,7 @@ def backwardProp(Z1, A1, Z2, A2, W1, W2, X, Y):
     dW2 = 1 / m * dZ2.dot(A1.T)
     db2 = 1 / m * np.sum(dZ2)
 
-    dZ1 = W2.T.dot(dZ2) * derivReLU(Z1)
+    dZ1 = W2.T.dot(dZ2) * ReLU().backward(Z1)
     dW1 = 1 / m * dZ1.dot(X.T)
     db1 = 1 / m * np.sum(dZ1)
 
@@ -146,6 +146,21 @@ def get_accuracy(predictions, Y):
 
 
 def gradient_decent(X, Y, alpha, iterations):
+    if os.path.exists('./output/data.json'):
+        # get weights and biases from file
+        with open('output/data.json') as file_object:
+            data = json.load(file_object)
+
+        # convert data to numpy arrays
+        W1 = np.array(data['W1'])
+        b1 = np.array(data['b1'])
+
+        W2 = np.array(data['W2'])
+        b2 = np.array(data['b2'])
+
+        return W1, b1, W2, b2
+
+    # train neural network
     W1, b1, W2, b2 = init_params()
 
     for i in range(iterations):
@@ -158,11 +173,19 @@ def gradient_decent(X, Y, alpha, iterations):
             print("Iteration ", i)
             print("Accuracy ", get_accuracy(get_predictions(A2), Y))
 
+    # save weights and biases to json file
+    aDict = {"W1": W1.tolist(), "b1": b1.tolist(),
+             "W2": W2.tolist(), "b2": b2.tolist()}
+    jsonString = json.dumps(aDict)
+    jsonFile = open("output/data.json", "w")
+    jsonFile.write(jsonString)
+    jsonFile.close()
+
     return W1, b1, W2, b2
 
 
 # train network
-W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 1)
+W1, b1, W2, b2 = gradient_decent(X_train, Y_train, 0.1, 5000)
 
 
 def make_prediction(X, W1, b1, W2, b2):
@@ -212,13 +235,13 @@ def setup():
 
     # draw nodes over lines
     for i in range(12):
-        drawNode(38, i * (24 + 5) + 260 / 2, np.random.rand(), 24)
+        drawNode(48, i * (24 + 5) + 260 / 2, 0, 24)
 
     for i in range(10):
-        drawNode(col_width / 2 - 23, i * (46 + 10) + 20, 0, 46)
+        drawNode(col_width / 2 - 16, i * (46 + 10) + 24, 0, 46)
 
         neuralNetworkCanvas.create_text(
-            col_width / 2 + 60, i * (46 + 10) + 46, font="Arial 20", text=str(i))
+            col_width / 2 + 60, i * (46 + 10) + 48, font="Arial 20", text=str(i))
 
 
 button1 = "up"
@@ -319,14 +342,19 @@ def process_canvas():
     npImg = np.reshape(npImg, (-1, 1))
     npImg = npImg / 255
 
-    print(make_prediction(npImg, W1, b1, W2, b2))
+    # print(make_prediction(npImg, W1, b1, W2, b2))
 
-    _, _, _, A2 = forwardProp(W1, b1, W2, b2, npImg)
+    _, A1, _, A2 = forwardProp(W1, b1, W2, b2, npImg)
+
+    # draw hidden layer nodes
+    A1 = A1.flatten()
+    for i in range(A1.size):
+        drawNode(48, i * (24 + 5) + 260 / 2, A1[i], 24)
 
     # draw output nodes
     A2 = A2.flatten()
     for i in range(A2.size):
-        drawNode(120, i * (48 + 10) + 20, A2[i], 48)
+        drawNode(col_width / 2 - 16, i * (46 + 10) + 24,  A2[i], 46)
 
 
 def keyPress(event):
