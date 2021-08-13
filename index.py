@@ -102,7 +102,7 @@ class Neural_Network:
         """
 
         if os.path.exists('./output/data.json'):
-            self.W1, self.b1, self.W2, self.b2 = W1, b1, W2, b2
+            self.W1, self.b1, self.W2, self.b2 = self.get_weights()
             return
 
         # input to layer 1
@@ -165,8 +165,7 @@ class Neural_Network:
 
     def predict(self, input):
         _, _, _, A2 = self.forward(input)
-        predictions = get_predictions(A2)
-        return predictions
+        return get_predictions(A2)
 
     def test(self, index):
         current_image = X_test[:, index, None]
@@ -203,12 +202,12 @@ class Neural_Network:
 
 # setup neural network
 net = Neural_Network()
-net.train(X_train, Y_train, 10, 0.1)
+# net.train(X_train, Y_train, 10, 0.1)
 for i in range(5):
     net.test(i)
 
-
 # other stuff
+
 
 def setup():
     # draw lines
@@ -240,6 +239,8 @@ def setup():
 
         neuralNetworkCanvas.create_text(
             col_width / 2 + 60, i * (46 + 10) + 48, font="Arial 20", text=str(i))
+
+    process_canvas()
 
 
 button1 = "up"
@@ -325,12 +326,8 @@ def drawLineAA(x1, y1, x2, y2, width=2, color="#000"):
 
 
 def process_canvas():
-    # img1.show()
-
     # resize image to 28 x 28 px, maybe remove anti aliasing
     img1small = img1.resize((28, 28), Image.ANTIALIAS)
-    # boost image contrast for better output
-    # img1small = ImageEnhance.Contrast(img1small).enhance(1.2)
     # img1small.show()
 
     # convert image to (1d) numpy array

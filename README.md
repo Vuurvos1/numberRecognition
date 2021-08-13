@@ -6,10 +6,10 @@ The data used for training the neural network is the [MNIST in csv](https://pjre
 
 **Made using:**
 
-- Python 3.8.5
-- Numpy 1.19.3
+- Python 3.9.6
+- Numpy 1.19.5
 - tkinter 8.6
-- Pillow 8.2.0
+- Pillow 8.3.1
 - Pandas 1.3.1
 
 **Note**
