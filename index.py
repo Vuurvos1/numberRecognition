@@ -15,16 +15,16 @@ root.geometry("850x600")  # set fixed window size
 col_width = 850/2
 
 # Create left and right frames
-leftFrame = Frame(root, width=425)
+leftFrame = Frame(root, width=col_width)
 leftFrame.pack(side=LEFT, expand=True)
-rightFrame = Frame(root, bg="blue")
+rightFrame = Frame(root, width=col_width)
 rightFrame.pack(side=RIGHT, expand=True)
 
 drawCanvas = Canvas(leftFrame, bg="white", height=200,
                     width=200, cursor="pencil")
-drawCanvas.pack(pady=(0, 16))
-img1 = Image.new("L", (232, 232))
-draw = ImageDraw.Draw(img1)
+drawCanvas.pack(pady=(0, 16), padx=(80, 0))
+canvas_img = Image.new("L", (200, 200))
+draw = ImageDraw.Draw(canvas_img)
 
 
 def clear_canvas():
@@ -37,7 +37,7 @@ btn = Button(leftFrame, text="clear",
              cursor="hand1", padx=12, pady=4, command=clear_canvas)
 btn.pack(side=RIGHT, padx=(0, 2))
 
-neuralNetworkCanvas = Canvas(rightFrame, height=600, width=425)
+neuralNetworkCanvas = Canvas(rightFrame, height=600, width=col_width)
 
 
 # get training and test data
@@ -55,7 +55,7 @@ def format_data(path, size):
     return x_data, y_data
 
 
-X_train, Y_train = format_data('dataset/mnist_train.csv', 25000)
+X_train, Y_train = format_data('dataset/mnist_train.csv', 60000)
 X_test, Y_test = format_data('dataset/mnist_test.csv', 1000)
 
 
@@ -73,13 +73,13 @@ def softmax(Z):
 
 
 def make_prediction(x_input):
-    _, _, _, A2 = net.forward(x_input)
-    predictions = get_predictions(A2)
+    _, _, _, _, _, A3 = net.forward(x_input)
+    predictions = get_predictions(A3)
     return predictions
 
 
-def get_predictions(A2):
-    return np.argmax(A2, 0)
+def get_predictions(x):
+    return np.argmax(x, 0)
 
 
 def get_accuracy(predictions, Y):
@@ -98,36 +98,49 @@ class Neural_Network:
         """
         # Network structure
         # inputs hidden layers outputs
-        # 784    [ 12 ]        10
+        # 784    [ 12 12 ]     10
         """
 
-        if os.path.exists('./output/data.json'):
-            self.W1, self.b1, self.W2, self.b2 = self.get_weights()
+        if os.path.exists('./output/weights.json'):
+            self.W1, self.b1, self.W2, self.b2, self.W3, self.b3 = self.get_weights()
             return
 
-        # input to layer 1
+        # layer 0 (input)
         self.W1 = np.random.rand(12, 784) - 0.5
         self.b1 = np.random.rand(12, 1) - 0.5
 
-        # hidden layer
-        self.W2 = np.random.rand(10, 12) - 0.5
-        self.b2 = np.random.rand(10, 1) - 0.5
+        # layer 1
+        self.W2 = np.random.rand(12, 12) - 0.5
+        self.b2 = np.random.rand(12, 1) - 0.5
+
+        # layer 2
+        self.W3 = np.random.rand(10, 12) - 0.5
+        self.b3 = np.random.rand(10, 1) - 0.5
 
     def forward(self, x_input):
+        # layer 0 (input)
         self.Z1 = self.W1.dot(x_input) + self.b1
         self.A1 = ReLU().forward(self.Z1)
 
-        # layer 2 (output)
+        # layer 1
         self.Z2 = self.W2.dot(self.A1) + self.b2
-        self.A2 = softmax(self.Z2)
+        self.A2 = ReLU().forward(self.Z2)
 
-        return self.Z1, self.A1, self.Z2, self.A2
+        # layer 2 (output)
+        self.Z3 = self.W3.dot(self.A2) + self.b3
+        self.A3 = softmax(self.Z3)
+
+        return self.Z1, self.A1, self.Z2, self.A2, self.Z3, self.A3
 
     def backward(self, x_input, y_input, alpha):
         m = y_input.size
 
         oneHotY = oneHot(y_input)
-        dZ2 = self.A2 - oneHotY
+        dZ3 = self.A3 - oneHotY
+        dW3 = 1 / m * dZ3.dot(self.A2.T)
+        db3 = 1 / m * np.sum(dZ3)
+
+        dZ2 = self.W3.T.dot(dZ3) * ReLU().backward(self.Z2)
         dW2 = 1 / m * dZ2.dot(self.A1.T)
         db2 = 1 / m * np.sum(dZ2)
 
@@ -140,32 +153,37 @@ class Neural_Network:
         self.b1 = self.b1 - alpha * db1
         self.W2 = self.W2 - alpha * dW2
         self.b2 = self.b2 - alpha * db2
+        self.W3 = self.W3 - alpha * dW3
+        self.b3 = self.b3 - alpha * db3
 
-        return dW1, db1, dW2, db2
+        return dW1, db1, dW2, db2, dW3, db3
 
     def train(self, x_train, y_train, epochs, alpha):
         # reshuffle weights and biases
         self.W1 = np.random.rand(12, 784) - 0.5
         self.b1 = np.random.rand(12, 1) - 0.5
 
-        self.W2 = np.random.rand(10, 12) - 0.5
-        self.b2 = np.random.rand(10, 1) - 0.5
+        self.W2 = np.random.rand(12, 12) - 0.5
+        self.b2 = np.random.rand(12, 1) - 0.5
+
+        self.W3 = np.random.rand(10, 12) - 0.5
+        self.b3 = np.random.rand(10, 1) - 0.5
 
         for i in range(epochs):
             for j in range(len(x_train)):
-                Z1, A1, Z2, A2 = self.forward(x_train)
-                dW1, db1, dW2, db2 = self.backward(x_train, y_train, alpha)
+                self.forward(x_train)
+                self.backward(x_train, y_train, alpha)
 
             if i % 1 == 0:
                 print("Epoch ", i, "   Accuracy",
-                      get_accuracy(get_predictions(self.A2), y_train))
+                      get_accuracy(get_predictions(self.A3), y_train))
 
         self.save_weights()
-        return self.W1, self.b1, self.W2, self.b2
+        return self.W1, self.b1, self.W2, self.b2, self.W3, self.b3
 
     def predict(self, input):
-        _, _, _, A2 = self.forward(input)
-        return get_predictions(A2)
+        _, _, _, _, _, A3 = self.forward(input)
+        return get_predictions(A3)
 
     def test(self, index):
         current_image = X_test[:, index, None]
@@ -176,7 +194,7 @@ class Neural_Network:
 
     def get_weights(self):
         # get weights and biases from file
-        with open('output/data.json') as file_object:
+        with open('output/weights.json') as file_object:
             data = json.load(file_object)
 
         # convert data to numpy arrays
@@ -186,14 +204,18 @@ class Neural_Network:
         W2 = np.array(data['W2'])
         b2 = np.array(data['b2'])
 
-        return W1, b1, W2, b2
+        W3 = np.array(data['W3'])
+        b3 = np.array(data['b3'])
+
+        return W1, b1, W2, b2, W3, b3
 
     def save_weights(self):
         # save weights and biases to json file
         data = {"W1": self.W1.tolist(), "b1": self.b1.tolist(),
-                "W2": self.W2.tolist(), "b2": self.b2.tolist()}
+                "W2": self.W2.tolist(), "b2": self.b2.tolist(),
+                "W3": self.W3.tolist(), "b3": self.b3.tolist()}
         jsonString = json.dumps(data)
-        jsonFile = open("output/data.json", "w")
+        jsonFile = open("output/weights.json", "w")
         jsonFile.write(jsonString)
         jsonFile.close()
 
@@ -210,35 +232,17 @@ for i in range(5):
 
 
 def setup():
-    # draw lines
-    # layer 1 to 2 connections
-    # for i in range(20):
-    #     x1 = 10 + 12  # add half node width
-    #     y1 = i * (24) + 40 + 12
-    #     for j in range(20):
-    #         x2 = 60 + 12  # add half node width
-    #         y2 = j * (24) + 40 + 12
-    #         drawLineAA(x1, y1, x2, y2, width=1, color="#000")
-
-    # layer 2 to 3 connections
-    # for i in range(20):
-    #     x1 = 60 + 12  # add half node width
-    #     y1 = i * (24) + 40 + 12
-    #     for j in range(10):
-    #         x2 = 120 + 24
-    #         y2 = j * (48 + 10) + 48
-
-    #         drawLineAA(x1, y1, x2, y2, width=1, color="#AAA")
-
-    # draw nodes over lines
+    # draw nodes
     for i in range(12):
-        drawNode(48, i * (24 + 5) + 260 / 2, 0, 24)
+        drawNode(92, i * (24 + 5) + 260 / 2, 0, 24)
+
+        drawNode(200, i * (24 + 5) + 260 / 2, 0, 24)
 
     for i in range(10):
-        drawNode(col_width / 2 - 16, i * (46 + 10) + 24, 0, 46)
+        drawNode(col_width - 110, i * (46 + 10) + 24, 0, 46)
 
         neuralNetworkCanvas.create_text(
-            col_width / 2 + 60, i * (46 + 10) + 48, font="Arial 20", text=str(i))
+            col_width - 48, i * (46 + 10) + 48, font="Arial 20", text=str(i))
 
     process_canvas()
 
@@ -276,7 +280,7 @@ def motion(event):
             # draw line on canvas
             drawCanvas.create_line(x, y, x1, y1, width=5)
             # draw line for neural network, add offset to create room around number
-            draw.line([x+16, y+16, x1+16, y1+16], 255, 16)
+            draw.line([x, y, x1, y1], 255, 16)
 
         drawCanvas.old_coords = x, y
 
@@ -318,45 +322,50 @@ def drawNode(x, y, fill=1, size=38):
     neuralNetworkCanvas.create_rectangle(x1, y1, x2, y2, fill="black")
 
 
-def drawLineAA(x1, y1, x2, y2, width=2, color="#000"):
-    # Antialiasing draw .5px thicker line with approx 33% of color intensity before rendering line
-    neuralNetworkCanvas.create_line(
-        x1, y1, x2, y2, width=width + 0.5, fill="#AAA")
-    neuralNetworkCanvas.create_line(x1, y1, x2, y2, width=width, fill="#000")
+def drawLineAA(line_coords, width=2):
+    # line_coords shape [[x1, y1, x2, y2], [x1, y1, x2, y2], ...]
+    for i in line_coords:
+        # Antialiasing draw .5px thicker line with approx 33% of color intensity before rendering line
+        neuralNetworkCanvas.create_line(
+            i[0], i[1], i[2], i[3], width=width + 0.5, fill="#AAA")
+        neuralNetworkCanvas.create_line(
+            i[0], i[1], i[2], i[3], width=width, fill="#000")
 
 
 def process_canvas():
     # resize image to 28 x 28 px, maybe remove anti aliasing
-    img1small = img1.resize((28, 28), Image.ANTIALIAS)
-    # img1small.show()
+    img_small = canvas_img.resize((28, 28), Image.ANTIALIAS)
+    # img_small.show()
 
     # convert image to (1d) numpy array
-    pixels = Image.Image.getdata(img1small)
+    pixels = Image.Image.getdata(img_small)
     npImg = np.array(pixels)
 
     npImg = np.reshape(npImg, (-1, 1))
     npImg = npImg / 255
 
-    # print(make_prediction(npImg, W1, b1, W2, b2))
+    # print(make_prediction(npImg))
 
-    _, A1, _, A2 = net.forward(npImg)
+    _, A1, _, A2, _, A3 = net.forward(npImg)
 
-    # draw hidden layer nodes
+    # layer 0 (input)
     A1 = A1.flatten()
     for i in range(A1.size):
-        drawNode(48, i * (24 + 5) + 260 / 2, A1[i], 24)
+        drawNode(92, i * (24 + 5) + 260 / 2, A1[i], 24)
 
-    # draw output nodes
+    # layer 1
     A2 = A2.flatten()
     for i in range(A2.size):
-        drawNode(col_width / 2 - 16, i * (46 + 10) + 24,  A2[i], 46)
+        drawNode(200, i * (24 + 5) + 260 / 2, A2[i], 24)
+
+    # layer 2 (output)
+    A3 = A3.flatten()
+    for i in range(A3.size):
+        drawNode(col_width - 110, i * (46 + 10) + 24, A3[i], 46)
 
 
 def keyPress(event):
     print(event.char)
-
-    # if event.char == "s":
-    # process_canvas()
 
 
 root.bind("<Key>", keyPress)
