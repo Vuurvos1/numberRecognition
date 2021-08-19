@@ -13,7 +13,9 @@ The data used for training the neural network is the [MNIST in csv](https://pjre
 - Pandas 1.3.1
 
 **Note**
-While drawing a digit, drawing it almost as big as the canvas can increase the accuracy of the neural network
+Although the neural network can get around 95% accuracy on the testing dataset it still has some trouble with recognizing the drawn digits from the canvas,
+this is most likely because of the resizing and process of the canvas, which gets the input close to the dataset but not exact.
+While drawing a digit it can help drawing it close to the same size as the canvas, although not always sadly.
 
 ## Sources
 

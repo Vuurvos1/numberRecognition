@@ -280,7 +280,7 @@ def motion(event):
             # draw line on canvas
             drawCanvas.create_line(x, y, x1, y1, width=5)
             # draw line for neural network, add offset to create room around number
-            draw.line([x, y, x1, y1], 255, 16)
+            draw.line([x, y, x1, y1], 255, 8)
 
         drawCanvas.old_coords = x, y
 
@@ -333,7 +333,7 @@ def drawLineAA(line_coords, width=2):
 
 
 def process_canvas():
-    # resize image to 28 x 28 px, maybe remove anti aliasing
+    # resize image to 28 x 28 px
     img_small = canvas_img.resize((28, 28), Image.ANTIALIAS)
     # img_small.show()
 
